@@ -58,12 +58,20 @@ void editorProcessKeypress() {
       break;
   }
 }
+
+/*** output ***/ 
+
+void editorRefreshScreen() {
+  write(STDOUT_FILENO, "\x1b[2J", 4);
+}
+
 /*** init ***/
 int main() {
   enableRawMode();
 
   while (1) {
     char c = '\0';
+    editorRefreshScreen();
     editorProcessKeypress();
     if (read(STDIN_FILENO, &c, 1) == -1 && errno != EAGAIN) die("read");
     if (iscntrl(c)) {
