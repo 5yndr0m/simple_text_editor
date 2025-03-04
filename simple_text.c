@@ -9,6 +9,7 @@
 
 /*** defines ***/ 
 #define CTRL_KEY(k) ((k) & 0x1f)
+#define ABUF_INIT {NULL, 0}
 
 /*** data ***/
 struct editorConfig {
@@ -89,6 +90,27 @@ int getWindowSize(int *rows, int *cols) {
     return 0;
   }
 }
+
+/*** append buffer ***/ 
+
+struct abuf {
+  char *b;
+  int len;
+};
+
+void abAppend(struct abuf *ab, const char *s, int len) {
+  char *new = realloc(ab->b, ab->len + len);
+
+  if (new == NULL) return;
+  memcpy(&new[ab->len], s, len);
+  ab->b = new;
+  ab->len += len;
+}
+
+void abFree(struct abuf *ab) {
+  free(ab->b);
+}
+
 /*** input ***/ 
 
 void editorProcessKeypress() {
