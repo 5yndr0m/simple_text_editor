@@ -47,12 +47,24 @@ char editorReadKey() {
   return c;
 }
 
+/*** input ***/ 
+
+void editorProcessKeypress() {
+  char c = editorReadKey();
+
+  switch (c) {
+    case CTRL_KEY('q'):
+      exit(0);
+      break;
+  }
+}
 /*** init ***/
 int main() {
   enableRawMode();
 
   while (1) {
     char c = '\0';
+    editorProcessKeypress();
     if (read(STDIN_FILENO, &c, 1) == -1 && errno != EAGAIN) die("read");
     if (iscntrl(c)) {
       printf("%d\r\n", c);
