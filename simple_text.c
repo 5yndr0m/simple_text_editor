@@ -167,7 +167,7 @@ int getWindowSize(int *rows, int *cols) {
 void editorOpen(char *filename) {
     FILE *fp = fopen(filename, "r");
     if (!fp) die("fopen");
-    
+
     char *line = NULL;
     size_t linecap = 0;
     ssize_t linelen;
@@ -274,7 +274,7 @@ void editorDrawRows(struct abuf *ab) {
   int y;
   for (y = 0; y < E.screenrows; y++) {
     if ( y >= E.numrows) {
-        if (y == E.screenrows / 3) {
+        if (E.numrows == 0 && y == E.screenrows / 3) {
         char welcome[80];
         int welcomelen = snprintf(welcome, sizeof(welcome), "Simple_Text -- version %s", SIMPLE_TEXT_VERSION);
         if (welcomelen > E.screencols) welcomelen = E.screencols;
