@@ -168,7 +168,7 @@ int getWindowSize(int *rows, int *cols) {
 
 void editorAppendRow(char *s, size_t len){
     E.row = realloc(E.row, sizeof(erow) * (E.numrows + 1));
-    
+
     int at = E.numrows;
     E.row[at].size = len;
     E.row[at].chars = malloc(len + 1);
@@ -219,7 +219,7 @@ void abFree(struct abuf *ab) {
 
 void editorMoveCursor(int key) {
     erow *row = (E.cy >= E.numrows) ? NULL : &E.row[E.cy];
-    
+
   switch (key) {
     case ARROW_LEFT:
       if (E.cx != 0) {
@@ -241,6 +241,12 @@ void editorMoveCursor(int key) {
         E.cy++;
       }
       break;
+  }
+  
+  row = (E.cy >= E.numrows) ? NULL : &E.row[E.cy];
+  int rowlen = row ? row->size : 0;
+  if (E.cx > rowlen) {
+      E.cx = rowlen;
   }
 }
 
@@ -332,7 +338,7 @@ void editorDrawRows(struct abuf *ab) {
 
 void editorRefreshScreen() {
     editorScroll();
-    
+
   struct abuf ab = ABUF_INIT;
 
   abAppend(&ab, "\x1b[?25l", 6);
