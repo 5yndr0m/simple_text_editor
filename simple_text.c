@@ -271,13 +271,13 @@ void editorMoveCursor(int key) {
         E.cx--;
       } else if (E.cy > 0) {
           E.cy--;
-          E>cx = E.row[E.cy].size;
+          E.cx = E.row[E.cy].size;
       }
       break;
     case ARROW_RIGHT:
         if (row && E.cx < row->size){
         E.cx++;
-        } else if (row && E.cx == row->sie){
+        } else if (row && E.cx == row->size){
             E.cy++;
             E.cx = 0;
         }
@@ -322,6 +322,12 @@ void editorProcessKeypress() {
     case PAGE_UP:
     case PAGE_DOWN:
       {
+          if (c == PAGE_UP) {
+              E.cy = E.rowoff;
+          } else if (c == PAGE_DOWN) {
+              E.cy = E.rowoff + E.screenrows - 1;
+              if (E.cy > E.numrows) E.cy = Enumrows;
+          }
         int times =E.screenrows;
         while (times--)
           editorMoveCursor(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
@@ -342,7 +348,7 @@ void editorProcessKeypress() {
 void editorScroll(){
     E.rx = 0;
     if (E.cy < E.numrows) {
-        E.rx = editorRowCxToRX(&E.row[E.cy], E.cx);
+        E.rx = editorRowCxToRx(&E.row[E.cy], E.cx);
     }
     
     if (E.cy < E.rowoff) {
@@ -403,7 +409,7 @@ void editorRefreshScreen() {
   editorDrawRows(&ab);
 
   char buf[32];
-  snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (E.cy - E.rowoff) + 1, (E.rx - E.coloff)) + 1);
+  snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (E.cy - E.rowoff) + 1, (E.rx - E.coloff) + 1);
   abAppend(&ab, buf, strlen(buf));
 
   abAppend(&ab, "\x1b[H", 3);
