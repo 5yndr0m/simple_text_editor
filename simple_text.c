@@ -26,7 +26,7 @@
 #define SIMPLE_TEXT_TAB_STOP 8
 
 enum editorKey {
-    BACKSPACE = 127;
+    BACKSPACE = 127,
   ARROW_LEFT = 1000,
   ARROW_RIGHT,
   ARROW_UP,
@@ -297,7 +297,7 @@ void editorSave(){
     int len;
     char *buf = editorRowsToString(&len);
     
-    int fd = open(E.filename, O_REWR | O_CREAT, 0644);
+    int fd = open(E.filename, O_RDWR | O_CREAT, 0644);
     if (fd != -1){
         if (ftruncate(fd, len) != -1){
             if (write(fd, buf, len) == len){
