@@ -16,14 +16,14 @@
 #include <termios.h>
 #include <time.h>
 #include <unistd.h>
+
 /*** defines ***/
+
 #define SIMPLE_TEXT_VERSION "0.0.1"
-
 #define CTRL_KEY(k) ((k) & 0x1f)
-
 #define ABUF_INIT {NULL, 0}
-
 #define SIMPLE_TEXT_TAB_STOP 8
+#define SIMPLE_TEXT_QUIT_TIMES 3
 
 enum editorKey {
     BACKSPACE = 127,
@@ -195,7 +195,7 @@ int editorRowCxToRx(erow *row, int cx){
 }
 
 void editorUpdateRow(erow *row){
-    
+
     int tabs = 0;
     int j;
     for (j = 0; j < row->size; j++){
@@ -225,11 +225,11 @@ void editorAppendRow(char *s, size_t len){
     E.row[at].chars = malloc(len + 1);
     memcpy(E.row[at].chars, s, len);
     E.row[at].chars[len] = '\0';
-    
+
     E.row[at].rsize = 0;
     E.row[at].render = NULL;
     editorUpdateRow(&E.row[at]);
-    
+
     E.numrows++;
     E.dirty++;
 }
@@ -262,7 +262,7 @@ void *editorRowsToString(int *buflen){
     for (j = 0; j < E.numrows; j++)
         totlen += E.row[j].size + 1;
     *buflen = totlen;
-    
+
     char *buf = malloc(totlen);
     char *p = buf;
     for (j = 0; j < E.numrows; j++){
@@ -271,14 +271,14 @@ void *editorRowsToString(int *buflen){
         *p = '\n';
         p++;
     }
-    
+
     return buf;
 }
 
 void editorOpen(char *filename) {
     free(E.filename);
     E.filename = strdup(filename);
-    
+
     FILE *fp = fopen(filename, "r");
     if (!fp) die("fopen");
 
@@ -297,10 +297,10 @@ void editorOpen(char *filename) {
 
 void editorSave(){
     if (E.filename == NULL) return;
-    
+
     int len;
     char *buf = editorRowsToString(&len);
-    
+
     int fd = open(E.filename, O_RDWR | O_CREAT, 0644);
     if (fd != -1){
         if (ftruncate(fd, len) != -1){
@@ -371,7 +371,7 @@ void editorMoveCursor(int key) {
       }
       break;
   }
-  
+
   row = (E.cy >= E.numrows) ? NULL : &E.row[E.cy];
   int rowlen = row ? row->size : 0;
   if (E.cx > rowlen) {
@@ -380,19 +380,26 @@ void editorMoveCursor(int key) {
 }
 
 void editorProcessKeypress() {
+    static int quit_times = SIMPLE_TEXT_QUIT_TIMES;
+    
   int c = editorReadKey();
 
   switch (c) {
       case '\r':
         /* TODO */
         break;
-        
+
     case CTRL_KEY('q'):
+        if (E.dirty && quit_times > 0){
+            editorSetStatusMessage("WARNING!!! File has unsaved changes. ""Press Ctrl-Q %d more times to quit.", quit_times);
+            quit_times--;
+            return;
+        }
       write(STDOUT_FILENO, "\x1b[2J", 4);
       write(STDOUT_FILENO, "\x1b[H", 3);
       exit(0);
       break;
-      
+
     case CTRL_KEY('s'):
       editorSave();
       break;
@@ -406,7 +413,7 @@ void editorProcessKeypress() {
           E.cx = E.row[E.cy].size;
       }
       break;
-      
+
     case BACKSPACE:
     case CTRL_KEY('h'):
     case DEL_KEY:
@@ -422,7 +429,7 @@ void editorProcessKeypress() {
               E.cy = E.rowoff + E.screenrows - 1;
               if (E.cy > E.numrows) E.cy = E.numrows;
           }
-          
+
         int times =E.screenrows;
         while (times--)
           editorMoveCursor(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
@@ -436,16 +443,18 @@ void editorProcessKeypress() {
         editorMoveCursor(c);
         break;
     }
-    
+
     case CTRL_KEY('l'):
     case '\x1b':
       break;
-    
+
     default:{
         editorInsertChar(c);
-        break; 
-    }     
+        break;
+    }
   }
+  
+  quit_times = SIMPLE_TEXT_QUIT_TIMES;
 }
 
 /*** output ***/
@@ -463,7 +472,7 @@ void editorScroll(){
     if (E.cy < E.numrows) {
         E.rx = editorRowCxToRx(&E.row[E.cy], E.cx);
     }
-    
+
     if (E.cy < E.rowoff) {
         E.rowoff = E.cy;
     }
@@ -587,13 +596,13 @@ int main(int argc, char *argv[]) {
   if (argc >= 2) {
       editorOpen(argv[1]);
   }
-  
+
   editorSetStatusMessage("HELP: Ctrl-S = save | Ctrl-Q = quit");
 
   while (1) {
     editorRefreshScreen();
     editorProcessKeypress();
   }
-  
+
   return 0;
 }
