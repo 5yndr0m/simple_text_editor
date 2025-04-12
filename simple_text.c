@@ -197,6 +197,20 @@ int editorRowCxToRx(erow *row, int cx){
     return rx;
 }
 
+int editorRowRxToCx(erow *row, int rx){
+    int cur_rx = 0;
+    int cx;
+    for (cx = 0; cx < row->size; cx++){
+        if (row->chars[cx] == '\t'){
+            cur_rx += (SIMPLE_TEXT_TAB_STOP - 1) - (cur_rx % SIMPLE_TEXT_TAB_STOP);
+        }
+        cur_rx++;
+
+        if (cur_rx > rx) return cx;
+    }
+    return cx;
+}
+
 void editorUpdateRow(erow *row){
 
     int tabs = 0;
@@ -222,7 +236,7 @@ void editorUpdateRow(erow *row){
 
 void editorInsertRow(int at, char *s, size_t len){
     if (at < 0 || at > E.numrows) return;
-    
+
     E.row = realloc(E.row, sizeof(erow) * (E.numrows + 1));
     memmove(&E.row[at + 1], &E.row[at], sizeof(erow) * (E.numrows - at));
 
@@ -307,7 +321,7 @@ void editorInsertNewLine(){
 void editorDelChar(){
     if (E.cy == E.numrows) return;
     if (E.cx == 0 && E.cy == 0) return;
-    
+
     erow *row = &E.row[E.cy];
     if (E.cx > 0){
         editorRowDelChar(row, E.cx - 1);
@@ -388,6 +402,27 @@ void editorSave(){
     }
     free(buf);
     editorSetStatusMessage("Can't save! I/O error: %s", strerror(errno));
+}
+
+/*** find ***/
+
+void editorFind(){
+    char *query = editorPrompt("Search: %s (ESC to cancel)");
+    if (query == NULL) return;
+
+    int i;
+    for (i = 0; i < E.numrows; i++){
+        erow *row = &E.row[i];
+        char *match = strstr(row->render, query);
+        if (match) {
+            E.cy = i;
+            E.cx = editorRowRxToCx(row, match - row->render);
+            E.rowoff = E.numrows;
+            break;
+        }
+    }
+
+    free(query);
 }
 
 /*** append buffer ***/
